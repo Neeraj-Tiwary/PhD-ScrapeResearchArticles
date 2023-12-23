@@ -2,19 +2,9 @@ from typing import List
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.edge.service import Service as EdgeService
-from Levenshtein import ratio
-from urllib.parse import quote
-from bs4 import BeautifulSoup
 from os import path, makedirs
-from math import ceil
-from operator import itemgetter
-from string import ascii_letters
-from sys import platform
-import re
-import subprocess
 import csv
-import config
-
+from sys import platform
 
 def make_chrome_headless(o=True):
     """
@@ -32,7 +22,9 @@ def create_list_of_selected_jc(publisher) -> List:
     with open("SelectedJournalsAndConferences.csv", mode="r") as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
-            if publisher in row["Publisher"]:
+            if publisher == "all":
+                selected_jc.append(row["Name"])
+            elif publisher in row["Publisher"]:
                 selected_jc.append(row["Name"])
     selected_jc.pop(0)
     return selected_jc
@@ -148,3 +140,5 @@ header = [
     "Query",
 ]
 
+# create list of selected journals and conferences using below function
+list_of_selected_jc = create_list_of_selected_jc("all")

@@ -2,10 +2,16 @@ from common_functions import *
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from Levenshtein import ratio
+from bs4 import BeautifulSoup
+from math import ceil
+from operator import itemgetter
+from urllib.parse import quote
 from time import sleep
 import re
+import subprocess
+
 import config
-import requests
 
 
 def quit_drivers(drivers):
@@ -19,7 +25,8 @@ def quit_drivers(drivers):
 def is_valid_search() -> List:
     """
     - Input: N.A.
-    - Output: 7 -> [1], [2], [3] are drivers for ACM, Springer and IEEE; [4] search query gathered from IO; [5], [6], [7] are the number of pages to traverse when searching for results on ACM, Springer and IEEE
+    - Output: 7 -> [1], [2], [3], [4] are drivers for ACM, Springer, IEEE, and ScienceDirect; [5] search query gathered from IO;
+    --             [6], [7], [8], [9] are the number of pages to traverse when searching for results on ACM, Springer, IEEE, and ScienceDirect
     - Number of essential steps (labeled below as comments): 4
     """
     drivers = []
@@ -85,7 +92,7 @@ def is_valid_search() -> List:
         driver_for_springer.get(url_springer)
 
         # Implicit wait for 30 seconds
-        driver_for_springer.implicitly_wait(100)
+        driver_for_springer.implicitly_wait(500)
 
         # 2.3 - Springer driver parses max pages of results
         try:
@@ -222,14 +229,14 @@ def is_valid_search() -> List:
     except Exception as e:
         fail_message(e)
         if platform == "win32":
-            subprocess.call([r"kill_chromedriver.bat"])
+            subprocess.call([r"kill_edgedriver.bat"])
         else:
             quit_drivers(drivers)
         return []
     except KeyboardInterrupt as k:
         fail_message(k)
         if platform == "win32":
-            subprocess.call([r"kill_chromedriver.bat"])
+            subprocess.call([r"kill_edgedriver.bat"])
             # raise SystemExit(0)
         else:
             quit_drivers(drivers)
@@ -287,14 +294,14 @@ def get_all_articles() -> bool:
             #driver_for_acm = make_chrome_headless()
             drivers.append(driver_for_acm)
 
-            with open(str(file_path), "w", encoding="UTF8", newline="") as f:
+            with open(str(file_path), "a+", encoding="UTF8", newline="") as f:
                 # create the csv writer
                 writer = csv.writer(f)
                 k = 0  # counts how many results match selected journals/conferences
                 print('max_pages_acm: ', max_pages_acm)
 
                 # List of JC belongs to ACM
-                list_of_selected_jc_acm = create_list_of_selected_jc("ACM")
+                #list_of_selected_jc_acm = create_list_of_selected_jc("ACM")
 
                 for i in range(int(max_pages_acm)):  # traverse each page
                     t = i + 1
@@ -322,7 +329,9 @@ def get_all_articles() -> bool:
                         except:
                             journal = "Not Found"
 
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc_acm if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc_acm if (ratio(journal, matched_with) >= similarity_percentage)]
+                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+
                         if len(matched_journal) > 0:
                             # Result title
                             title_tmp = container.find("h5").text
@@ -412,7 +421,7 @@ def get_all_articles() -> bool:
                 print('max_pages_springer: ', max_pages_springer)
 
                 # List of JC belongs to Springer
-                list_of_selected_jc_springer = create_list_of_selected_jc("Springer")
+                #list_of_selected_jc_springer = create_list_of_selected_jc("Springer")
 
                 for i in range(int(max_pages_springer)):  # traverse each page
                     t = i + 1
@@ -434,7 +443,9 @@ def get_all_articles() -> bool:
                         except:
                             journal = "Not found"
 
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc_springer if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc_springer if (ratio(journal, matched_with) >= similarity_percentage)]
+                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+
                         if len(matched_journal) > 0:
                             # Result title
                             title = container.find("h2").text.lstrip()
@@ -502,15 +513,17 @@ def get_all_articles() -> bool:
                 print('max_pages_ieee: ', max_pages_ieee)
 
                 # List of JC belongs to Springer
-                list_of_selected_jc_ieee = create_list_of_selected_jc("IEEE")
+                #list_of_selected_jc_ieee = create_list_of_selected_jc("IEEE")
 
                 for i in range(1, int(max_pages_ieee) + 1):
                     t = i
                     print(f"Checking results on page {t}...")
                     url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true&queryText=(%22Author%20Keywords%22:{quote(query)})&ranges=2018_2023_Year&pageNumber={str(i)}&rowsPerPage={hits_to_show_ieee}"
                     driver_for_ieee.get(url_ieee)
+
                     # Implicit wait for 30 seconds
-                    driver_for_ieee.implicitly_wait(100)
+                    sleep(10)
+                    driver_for_ieee.implicitly_wait(300)
                     #results_per_page = driver_for_ieee.find_elements_by_class_name(
                     #    "List-results-items"
                     #)
@@ -525,7 +538,9 @@ def get_all_articles() -> bool:
                             journal = "Not found"
 
                         #for matched_with in list_of_selected_jc_ieee:
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc_ieee if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc_ieee if (ratio(journal, matched_with) >= similarity_percentage)]
+                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+
                         if len(matched_journal) > 0:
                             # Result title
                             title = container.find("h3").text.lstrip()
@@ -593,7 +608,7 @@ def get_all_articles() -> bool:
                 print('max_pages_sciencedirect: ', max_pages_sciencedirect)
 
                 # List of JC belongs to Elsevier
-                list_of_selected_jc_sciencedirect = create_list_of_selected_jc("Elsevier")
+                #list_of_selected_jc_sciencedirect = create_list_of_selected_jc("Elsevier")
 
                 for i in range(int(max_pages_sciencedirect)):  # traverse each page
                     t = i + 1
@@ -627,7 +642,9 @@ def get_all_articles() -> bool:
                             .text.strip()
                         )
                         #print('journal: ', journal)
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc_sciencedirect if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc_sciencedirect if (ratio(journal, matched_with) >= similarity_percentage)]
+                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+
                         if len(matched_journal) > 0:
                         #for matched_with in list_of_selected_jc_sciencedirect:
                             #if ratio(journal, matched_with) >= similarity_percentage:
@@ -699,7 +716,7 @@ def get_all_articles() -> bool:
     except Exception as e:
         fail_message(e)
         if platform == "win32":
-            subprocess.call([r"kill_chromedriver.bat"])
+            subprocess.call([r"kill_edgedriver.bat"])
             # raise SystemExit(0)
         else:
             driver_for_acm.quit()
@@ -714,7 +731,7 @@ def get_all_articles() -> bool:
     except KeyboardInterrupt as k:
         fail_message(k)
         if platform == "win32":
-            subprocess.call([r"kill_chromedriver.bat"])
+            subprocess.call([r"kill_edgedriver.bat"])
             # raise SystemExit(0)
         else:
             driver_for_acm.quit()
