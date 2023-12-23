@@ -6,6 +6,7 @@ from os import path, makedirs
 import csv
 from sys import platform
 
+
 def make_chrome_headless(o=True):
     """
     Return a headless driver of Chrome
