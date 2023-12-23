@@ -22,7 +22,6 @@
       </ul>
     </li>
     <li><a href="#status">Status</a></li>
-    <li><a href="#issues">Issues</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -144,14 +143,14 @@ To get this project running on your local machine, follow these simple steps:
 6. View the "Name" column inside `SelectedJournalsAndConferences.csv`: this is the list of names whose [similarity (Levenshtein ratio)](https://rawgit.com/ztane/python-Levenshtein/master/docs/Levenshtein.html#Levenshtein-ratio) will be checked against each search result's journal/conference name. Feel free to modify this column on your local machine to add/remove journal names (not) of interest to you. 
 7. Execute `main.py` using Python
    ```sh
-   PATH_TO_PYTHON_INTERPRETER PATH_TO_main.py
+   PATH\TO\PYTHON_INTERPRETER PATH\TO\main.py
    ``` 
 
 
 <!-- STATUS -->
 ## Status
 Given that the layouts of online research databases are updated occasionally, the scraper may also need to be updated accordingly to successfully retrieve the necessary information therein. The table below provides the current status of the scraper's ability to retrieve information from different online research databases.
-<i>As of 12/22/23...</i>
+<i>As of 12/22/2023...</i>
 
 |   Database      | Scraper Status     |
 |:---------------:|:------------------:|
@@ -160,10 +159,6 @@ Given that the layouts of online research databases are updated occasionally, th
 | IEEE Xplore     |        ✅          |
 | ScienceDirect   |        ✅          |
 
-
-<!-- ISSUES -->
-## Issues
-On Windows only: Selenium's quit() method alone fails to kill chromedriver processes thereby leading to a sort of memory leak. To counter this, I added a batch file (`kill_chromedriver.bat`) that kills all `chrome.exe` processes. As a result, ANY Chrome process unrelated to this program will ALSO die at the hands of this rather brute approach.  
 
 
 

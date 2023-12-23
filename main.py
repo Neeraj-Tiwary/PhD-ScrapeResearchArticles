@@ -9,6 +9,5 @@ def main():
         print("The search results have been scraped and updated in the target destination file ...")
 
 
-
 if __name__ == "__main__":
     main()
