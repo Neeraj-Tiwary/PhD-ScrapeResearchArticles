@@ -47,6 +47,7 @@ def is_valid_search() -> List:
         driver_for_acm.get(url_acm)
 
         # Implicit wait for 30 seconds
+        sleep(3)
         driver_for_acm.implicitly_wait(100)
 
         # 1.3 - acm driver checks max page results
@@ -92,6 +93,7 @@ def is_valid_search() -> List:
         driver_for_springer.get(url_springer)
 
         # Implicit wait for 30 seconds
+        sleep(3)
         driver_for_springer.implicitly_wait(500)
 
         # 2.3 - Springer driver parses max pages of results
@@ -126,6 +128,7 @@ def is_valid_search() -> List:
         driver_for_ieee.get(url_ieee)
 
         # Implicit wait for 30 seconds
+        sleep(3)
         driver_for_ieee.implicitly_wait(100)
 
         # 3.3 - ieee driver checks max page results
@@ -170,6 +173,7 @@ def is_valid_search() -> List:
         driver_for_sciencedirect.get(url_sciencedirect)
 
         # Implicit wait for 30 seconds
+        sleep(5)
         driver_for_sciencedirect.implicitly_wait(100)
 
         # 4.3 - sciencedirect driver checks max page results
@@ -309,20 +313,22 @@ def get_all_articles() -> bool:
                     url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear=2018&BeforeYear=2023&AllField=Keyword%3A%28{quote(query)}%29&startPage={str(i)}&pageSize={hits_to_show_acm}"
                     driver_for_acm.get(url_acm)
                     # Implicit wait for 30 seconds
+                    sleep(3)
                     driver_for_acm.implicitly_wait(100)
                     # parse source code
                     soup = BeautifulSoup(driver_for_acm.page_source, "html.parser")
                     # Get the result containers
+                    #result_containers = soup.findAll(
+                    #    "div", class_="issue-item__content"
+                    #)
                     result_containers = soup.findAll(
-                        "div", class_="issue-item__content"
+                        "div", class_="issue-item issue-item--search clearfix"
                     )
                     j = 0  # set increment representing how many hits the user wants to traverse
 
                     # Loop through every container
                     for container in result_containers:
                         # Final results list
-                        results = []
-
                         # check if result journal is in list of selected journals
                         try:
                             journal = container.find("div", class_="issue-item__detail").a["title"]
@@ -366,14 +372,18 @@ def get_all_articles() -> bool:
                                 # Result date
                                 date = (
                                     container.find(
-                                        "div", class_="issue-item__detail"
-                                    )
-                                    .find("span", class_="dot-separator")
-                                    .find("span")
-                                    .text.rstrip(", ")
+                                        "div", class_="bookPubDate simple-tooltip__block--b"
+                                    ).text.strip()
                                 )
-                                numbers = re.compile(r"\d+(?:\.\d+)?")
-                                p_year = numbers.findall(date)[0]
+                                p_year = int(date[-4:])
+
+                                # Citations
+                                cite = (
+                                    container.find("div", class_="citation")
+                                    .find("span", class_="bold")
+                                )
+                                cite = int(cite.text.strip())
+
                                 # Result num
                                 j += 1
                                 # Similarity %
@@ -390,6 +400,7 @@ def get_all_articles() -> bool:
                                     sim_per,
                                     "ACM",
                                     query,
+                                    cite
                                 ]
                                 # write the data
                                 writer.writerow(data)
@@ -429,6 +440,7 @@ def get_all_articles() -> bool:
                     url_springer = f"https://link.springer.com/search/page/{str(t)}?facet-end-year=2023&date-facet-mode=between&facet-start-year=2018&query={quote(query)}&showAll=true"
                     driver_for_springer.get(url_springer)
                     # Implicit wait for 30 seconds
+                    sleep(3)
                     driver_for_springer.implicitly_wait(100)
                     # parse source code
                     soup = BeautifulSoup(driver_for_springer.page_source, "html.parser")
@@ -448,7 +460,7 @@ def get_all_articles() -> bool:
 
                         if len(matched_journal) > 0:
                             # Result title
-                            title = container.find("h2").text.lstrip()
+                            title = container.find("a", class_="title").text.lstrip()
                             if (
                                 added_titles.count(title) == 0
                             ):  # only add to result CSV if title hasn't been added already
@@ -465,11 +477,13 @@ def get_all_articles() -> bool:
                                 # Result author(s)
                                 author_list = container.find(
                                     "span", class_="authors"
-                                ).text.lstrip()
+                                ).text.strip()
+                                author_list = author_list.replace("\n", "").strip()
+
                                 # Result publish year
-                                p_year = container.find("span", class_="year")[
-                                    "title"
-                                ]
+                                p_year = container.find("span", class_="year").text.lstrip()
+                                p_year = p_year.replace("(", "").replace(")", "")
+                                p_year = int(p_year)
                                 # Result num
                                 j += 1
                                 # Similarity %
@@ -522,7 +536,7 @@ def get_all_articles() -> bool:
                     driver_for_ieee.get(url_ieee)
 
                     # Implicit wait for 30 seconds
-                    sleep(10)
+                    sleep(5)
                     driver_for_ieee.implicitly_wait(300)
                     #results_per_page = driver_for_ieee.find_elements_by_class_name(
                     #    "List-results-items"
@@ -565,7 +579,20 @@ def get_all_articles() -> bool:
                                 p_year_tmp = container.find(
                                     "div", class_="publisher-info-container"
                                 ).text
-                                p_year = re.sub(r"\D", "", p_year_tmp)
+                                p_year = re.sub(r"\D", "", p_year_tmp)[0:4]
+
+                                # Citations
+                                p_cite = (
+                                    container.find("div", class_="description")
+                                    .find_all("div")[1]
+                                    .find("span")
+                                )
+                                if p_cite is not None:
+                                    p_cite = p_cite.a.text.strip()
+                                    cite = int(re.sub(r"\D", "", p_cite))
+                                else:
+                                    cite = None
+
                                 # Similarity %
                                 t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
                                 matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
@@ -580,6 +607,7 @@ def get_all_articles() -> bool:
                                     sim_per,
                                     "IEEE",
                                     query,
+                                    cite
                                 ]
                                 # write the data
                                 writer.writerow(data)
@@ -619,10 +647,13 @@ def get_all_articles() -> bool:
                     url_sciencedirect = f"https://www.sciencedirect.com/search?date=2018-2023&tak=%s&offset=%s" % (quote(query), var_offset)
                     driver_for_sciencedirect.get(url_sciencedirect)
                     # Implicit wait for 30 seconds
+                    sleep(5)
                     driver_for_sciencedirect.implicitly_wait(100)
 
                     # Initialize code
-                    result_containers = driver_for_sciencedirect.find_elements(By.CSS_SELECTOR, "#srp-results-list > ol > li > div > div.result-item-content")
+                    #result_containers = driver_for_sciencedirect.find_elements(By.CSS_SELECTOR, "#srp-results-list > ol > li > div > div.result-item-content")
+                    result_containers = driver_for_sciencedirect.find_elements(By.CLASS_NAME, "result-item-content")
+
                     #print('result_containers:', result_containers)
                     j = 0  # set increment representing how many hits the user wants to traverse
 
@@ -632,7 +663,6 @@ def get_all_articles() -> bool:
                         container = BeautifulSoup(html, "lxml")
 
                         # Final results list
-                        results = []
                         # check if result journal is in list of selected journals
                         journal = (
                             container.find("span", class_="srctitle-date-fields")
@@ -679,9 +709,25 @@ def get_all_articles() -> bool:
                                     )
                                     .text.strip()
                                 )
-
                                 numbers = re.compile(r"\d+(?:\.\d+)?")
                                 p_year = numbers.findall(date)[-1]
+
+                                # Citations
+                                p_cite = (
+                                    container.find("li", class_="CitationCount")
+                                )
+
+                                if p_cite is not None:
+                                    c_cite = (
+                                        p_cite.find("span", class_="preview-link")
+                                        .find("a", class_="anchor anchor-default")
+                                        .find("span", "anchor-text")
+                                    ).text.strip()
+
+                                    cite = int(re.sub(r"\D", "", c_cite))
+                                else:
+                                    cite = None
+
                                 # Result num
                                 j += 1
                                 # Similarity %
@@ -698,6 +744,7 @@ def get_all_articles() -> bool:
                                     sim_per,
                                     "sciencedirect",
                                     query,
+                                    cite
                                 ]
                                 # write the data
                                 writer.writerow(data)
