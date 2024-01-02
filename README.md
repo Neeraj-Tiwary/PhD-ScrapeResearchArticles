@@ -35,7 +35,7 @@
 
 In the ever-expanding landscape of academic research, efficiently navigating and accessing papers from reputable databases is a paramount challenge for researchers. This project addresses this issue by developing a web scraper tailored to enhance the search and categorization process for papers within the ACM, Springer, IEEE Xplore, and ScienceDirect (Elsevier) online databases.
 
-The project begins with a curated compilation of 296 journals and conferences, including their CCF, Core, and Qualis rankings, encapsulated in the "_SelectedJournalsAndConferences.csv_" file. The web scraper employs a Levenshtein ratio-based similarity metric to compare the titles of search results with the entries in the compiled dataset. This allows for a flexible and user-specified threshold for similarity percentages, enabling researchers to tailor their search criteria.
+The project begins with a curated compilation of 296 journals and conferences, including their CCF, Core, and Qualis rankings, encapsulated in the "_SelectedJournalsAndConferences.csv_" file. The web scraper employs a Levenshtein ratio-based similarity metric to compare the publication titles of search results with the entries in the compiled dataset. This allows for a flexible and user-specified threshold for similarity percentages, enabling researchers to tailor their search criteria.
 
 Upon conducting a search, the scraper meticulously analyzes each search result's journal or conference title, determining its similarity to the precompiled list. Results exceeding the specified similarity threshold are systematically organized and stored in a user-designated CSV file, streamlining the process of identifying relevant publications.
 

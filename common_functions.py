@@ -139,7 +139,8 @@ header = [
     "Similarity %",
     "Database",
     "Query",
-    "Citations_Counts"
+    "Citations_Counts",
+    "Open_Access"
 ]
 
 # create list of selected journals and conferences using below function
