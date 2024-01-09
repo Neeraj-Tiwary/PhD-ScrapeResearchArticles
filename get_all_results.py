@@ -652,8 +652,13 @@ def get_all_articles() -> bool:
                                     cite = None
 
                                 # Open Access
-                                # IEEE contents can be accessed with university access
-                                open_access = None
+                                p_open_access = (
+                                    container.find("span", class_="icon-access-open-access icon-size-md u-relative")
+                                )
+                                if p_open_access is not None:
+                                    open_access = 1
+                                else:
+                                    open_access = 0
 
                                 # Similarity %
                                 t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
@@ -816,7 +821,7 @@ def get_all_articles() -> bool:
                                     journal,
                                     matched_with,
                                     sim_per,
-                                    "sciencedirect",
+                                    "ScienceDirect",
                                     query,
                                     cite,
                                     open_access

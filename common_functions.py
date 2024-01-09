@@ -23,11 +23,12 @@ def create_list_of_selected_jc(publisher) -> List:
     with open("SelectedJournalsAndConferences.csv", mode="r") as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
-            if publisher == "all":
-                selected_jc.append(row["Name"])
-            elif publisher in row["Publisher"]:
-                selected_jc.append(row["Name"])
-    selected_jc.pop(0)
+            if ((row["SJR-Quartile"] is not None and row["SJR-Quartile"] == "Q1") or (row["QUALIS"] in ["A1", "A2"] or row["CORE"] in ["A", "A*"] or row["CCF"] in ["A"])):
+                if publisher == "all":
+                    selected_jc.append(row["Name"])
+                elif publisher in row["Publisher"]:
+                    selected_jc.append(row["Name"])
+    #selected_jc.pop(0)
     return selected_jc
 
 
@@ -145,3 +146,5 @@ header = [
 
 # create list of selected journals and conferences using below function
 list_of_selected_jc = create_list_of_selected_jc("all")
+#print(list_of_selected_jc)
+
