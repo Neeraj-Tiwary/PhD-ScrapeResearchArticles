@@ -32,8 +32,9 @@ def is_valid_search() -> List:
     drivers = []
     try:
         # 0 - Query for search word
-        query = io_query()
-
+        query = io_input("query")
+        start_year = io_input("start_year")
+        end_year = io_input("end_year")
 
         ###################################################################################################
         # 1.1 - create drivers for each database
@@ -41,8 +42,7 @@ def is_valid_search() -> List:
         drivers.append(driver_for_acm)
         print("Driver for ACM is ready.")
 
-        #url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear=2018&BeforeYear=2023&AllField=Keyword%3A%28{quote(query)}%29"
-        url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear=2018&BeforeYear=2023&AllField=Title%3A%28{quote(query)}%29+AND+Abstract%3A%28{quote(query)}%29+AND+Keyword%3A%28{quote(query)}%29&startPage=&ContentItemType=research-article"
+        url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear={start_year}&BeforeYear={end_year}&AllField=Title%3A%28{quote(query)}%29+OR+Abstract%3A%28{quote(query)}%29+OR+Keyword%3A%28{quote(query)}%29&startPage=&ContentItemType=research-article"
 
         # 1.2 - driver visits links with user input term as search query and check for results between years 2018 - 2023
         driver_for_acm.get(url_acm)
@@ -88,21 +88,22 @@ def is_valid_search() -> List:
         drivers.append(driver_for_springer)
         print("Driver for Springer is ready.")
 
-        #url_springer = f"https://link.springer.com/search?query={quote(query)}&showAll=true&date-facet-mode=between&facet-end-year=2023&facet-start-year=2018"
-        url_springer = f"https://link.springer.com/search?new-search=true&query={quote(query)}&content-type=Article&content-type=ConferencePaper&date=custom&dateFrom=2018&dateTo=2023&language=En&sortBy=relevance"
+        url_springer = f"https://link.springer.com/search?new-search=true&query={quote(query)}&content-type=Article&content-type=ConferencePaper&date=custom&dateFrom={start_year}&dateTo={end_year}&language=En&sortBy=relevance"
 
         # 2.2 - driver visits links with user input term as search query and check for results between years 2018 - 2023
         driver_for_springer.get(url_springer)
 
         # Implicit wait for 30 seconds
-        sleep(5)
-        driver_for_springer.implicitly_wait(500)
+        sleep(7)
+        driver_for_springer.implicitly_wait(800)
+        hits_springer = 0
+        max_pages_springer = 0
 
         # 2.3 - Springer driver parses max pages of results
         try:
             source_code_springer = driver_for_springer.page_source
             soup_springer = BeautifulSoup(source_code_springer, "html.parser")
-            text_pages_springer = soup_springer.find("span", class_="u-display-flex u-mb-24").text.strip().replace(",", "")
+            text_pages_springer = soup_springer.find("span", class_="u-display-flex").text.strip().replace(",", "")
             hits_springer = int(re.findall(r"\b\d+\b", text_pages_springer)[2])
             hits_to_show_springer = int(re.findall(r"\b\d+\b", text_pages_springer)[1])
         except:
@@ -129,8 +130,7 @@ def is_valid_search() -> List:
         drivers.append(driver_for_ieee)
         print("Driver for IEEE Xplore is ready.")
 
-        #url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true&queryText=(%22Author%20Keywords%22:{quote(query)})&ranges=2018_2023_Year"
-        url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&matchBoolean=true&queryText=(%22Document%20Title%22:{quote(query)})%20OR%20(%22Abstract%22:{quote(query)})%20OR%20(%22Author%20Keywords%22:{quote(query)})&highlight=true&matchPubs=true&returnType=SEARCH&ranges=2018_2023_Year&returnFacets=ALL&refinements=ContentType:Conferences&refinements=ContentType:Journals&refinements=ContentType:Early%20Access%20Articles"
+        url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&matchBoolean=true&queryText=(%22Document%20Title%22:{quote(query)})%20OR%20(%22Abstract%22:{quote(query)})%20OR%20(%22Author%20Keywords%22:{quote(query)})&highlight=true&matchPubs=true&returnType=SEARCH&ranges={start_year}_{end_year}_Year&returnFacets=ALL&refinements=ContentType:Conferences&refinements=ContentType:Journals&refinements=ContentType:Early%20Access%20Articles"
 
         # 3.2 - driver visits links with user input term as search query and check for results between years 2018 - 2023
         driver_for_ieee.get(url_ieee)
@@ -175,9 +175,7 @@ def is_valid_search() -> List:
         drivers.append(driver_for_sciencedirect)
         print("Driver for sciencedirect is ready.")
 
-        #url_sciencedirect = f"https://www.sciencedirect.com/search?date=2018-2023&tak=%s" % quote(query)
-        url_sciencedirect = f"https://www.sciencedirect.com/search?date=2018-2023&tak={quote(query)}&langs=en&articleTypes=FLA%2CREV"
-
+        url_sciencedirect = f"https://www.sciencedirect.com/search?date={start_year}-{end_year}&tak={quote(query)}&langs=en&articleTypes=FLA%2CREV"
 
         # 4.2 - driver visits links with user input term as search query and check for results between years 2018 - 2023
         driver_for_sciencedirect.get(url_sciencedirect)
@@ -231,6 +229,8 @@ def is_valid_search() -> List:
             driver_for_ieee,
             driver_for_sciencedirect,
             query,
+            start_year,
+            end_year,
             int(max_pages_acm),
             int(max_pages_springer),
             int(max_pages_ieee),
@@ -271,6 +271,8 @@ def get_all_articles() -> bool:
             driver_for_ieee,
             driver_for_sciencedirect,
             query,
+            start_year,
+            end_year,
             max_pages_acm,
             max_pages_springer,
             max_pages_ieee,
@@ -279,17 +281,17 @@ def get_all_articles() -> bool:
             hits_to_show_springer,
             hits_to_show_ieee,
             hits_to_show_sciencedirect
-        ) = itemgetter(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)(is_valid_search())
+        ) = itemgetter(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)(is_valid_search())
 
         # 2 - do IO to: (1) get similarity_percentage user wants, (2) create file for results, and (3) let user know that drivers are starting to find & place results now
-        similarity_percentage, sp = itemgetter(0, 1)(sp_io())
+        #similarity_percentage, sp = itemgetter(0, 1)(sp_io())
         file_path = create_file(config.path_to_search_results)
         with open(str(file_path), "w", encoding="UTF8", newline="") as f:
             # create the csv writer
             writer = csv.writer(f)
             # write the header
             writer.writerow(header)
-        print_checking_all_results(sp)
+        #print_checking_all_results(sp)
 
         # 3 - create a list of titles to append to in order to prevent duplicate additions
         added_titles = []
@@ -320,12 +322,11 @@ def get_all_articles() -> bool:
                 for i in range(int(max_pages_acm)):  # traverse each page
                     t = i + 1
                     print(f"Checking results on page {t}...")
-                    #url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear=2018&BeforeYear=2023&AllField=Keyword%3A%28{quote(query)}%29&startPage={str(i)}&pageSize={hits_to_show_acm}"
-                    url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear=2018&BeforeYear=2023&AllField=Title%3A%28{quote(query)}%29+AND+Abstract%3A%28{quote(query)}%29+AND+Keyword%3A%28{quote(query)}%29&startPage={str(i)}&ContentItemType=research-article&pageSize={hits_to_show_acm}"
+                    url_acm = f"https://dl.acm.org/action/doSearch?fillQuickSearch=false&target=advanced&expand=dl&AfterYear={start_year}&BeforeYear={end_year}&AllField=Title%3A%28{quote(query)}%29+OR+Abstract%3A%28{quote(query)}%29+OR+Keyword%3A%28{quote(query)}%29&startPage={str(i)}&ContentItemType=research-article&pageSize={hits_to_show_acm}"
 
                     driver_for_acm.get(url_acm)
                     # Implicit wait for 30 seconds
-                    sleep(3)
+                    sleep(5)
                     driver_for_acm.implicitly_wait(100)
                     # parse source code
                     soup = BeautifulSoup(driver_for_acm.page_source, "html.parser")
@@ -347,85 +348,83 @@ def get_all_articles() -> bool:
                         except:
                             journal = "Not Found"
 
-                        #matched_journal = [matched_with for matched_with in list_of_selected_jc_acm if (ratio(journal, matched_with) >= similarity_percentage)]
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
-
-                        if len(matched_journal) > 0:
-                            # Result title
-                            title_tmp = container.find("h5").text
-                            title = title_tmp.strip("'")
-                            if (
-                                added_titles.count(title) == 0
-                            ):  # only add to result CSV if title hasn't been added already
-                                added_titles.append(title)
-                                k += 1
-                                result_count += 1
-                                print(
-                                    f"Placed {k} results from ACM and {result_count} in total so far! Still checking..."
+                        # Result title
+                        title_tmp = container.find("h5").text
+                        title = title_tmp.strip("'")
+                        if (
+                            added_titles.count(title) == 0
+                        ):  # only add to result CSV if title hasn't been added already
+                            added_titles.append(title)
+                            k += 1
+                            result_count += 1
+                            print(
+                                f"Placed {k} results from ACM and {result_count} in total so far! Still checking..."
+                            )
+                            # Result url
+                            temp_url = container.find("h5").a["href"]
+                            lst = [
+                                "https:/",
+                                temp_url[:4],
+                                ".org",
+                                temp_url[4:],
+                            ]
+                            url = "".join(lst)
+                            # Result authors
+                            authors = []
+                            ul = container.find("ul")
+                            for li in ul.findAll("li"):  # list of authors
+                                authors.append(
+                                    li.text.rstrip(", \n").strip("'")
                                 )
-                                # Result url
-                                temp_url = container.find("h5").a["href"]
-                                lst = [
-                                    "https:/",
-                                    temp_url[:4],
-                                    ".org",
-                                    temp_url[4:],
-                                ]
-                                url = "".join(lst)
-                                # Result authors
-                                authors = []
-                                ul = container.find("ul")
-                                for li in ul.findAll("li"):  # list of authors
-                                    authors.append(
-                                        li.text.rstrip(", \n").strip("'")
-                                    )
-                                t_author_list = str(authors).strip("[]")
-                                author_list = t_author_list.replace("'", "")
-                                # Result date
-                                date = (
-                                    container.find(
-                                        "div", class_="bookPubDate simple-tooltip__block--b"
-                                    ).text.strip()
-                                )
-                                p_year = int(date[-4:])
+                            t_author_list = str(authors).strip("[]")
+                            author_list = t_author_list.replace("'", "")
+                            # Result date
+                            date = (
+                                container.find(
+                                    "div", class_="bookPubDate simple-tooltip__block--b"
+                                ).text.strip()
+                            )
+                            p_year = int(date[-4:])
 
-                                # Citations
-                                cite = (
-                                    container.find("div", class_="citation")
-                                    .find("span", class_="bold")
-                                )
-                                cite = int(cite.text.strip().replace(",", ""))
+                            # Citations
+                            cite = (
+                                container.find("div", class_="citation")
+                                .find("span", class_="bold")
+                            )
+                            cite = int(cite.text.strip().replace(",", ""))
 
-                                # Open Access
-                                p_open_access = (
-                                    container.find("div", class_="access-icon")
-                                )
-                                if p_open_access is not None:
-                                    open_access = 1
-                                else:
-                                    open_access = 0
+                            # Open Access
+                            p_open_access = (
+                                container.find("div", class_="access-icon")
+                            )
+                            if p_open_access is not None:
+                                open_access = 1
+                            else:
+                                open_access = 0
 
-                                # Result num
-                                j += 1
-                                # Similarity %
-                                t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
-                                matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
-                                sim_per = format(t_sim_per, ".2f")
-                                data = [
-                                    url,
-                                    title,
-                                    author_list,
-                                    p_year,
-                                    journal,
-                                    matched_with,
-                                    sim_per,
-                                    "ACM",
-                                    query,
-                                    cite,
-                                    open_access
-                                ]
-                                # write the data
-                                writer.writerow(data)
+                            # Result num
+                            j += 1
+                            # Similarity %
+                            #t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
+                            #matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
+                            #sim_per = format(t_sim_per, ".2f")
+                            data = [
+                                url,
+                                title,
+                                author_list,
+                                p_year,
+                                journal,
+                                #matched_with,
+                                #sim_per,
+                                "ACM",
+                                cite,
+                                open_access,
+                                query,
+                                start_year,
+                                end_year
+                            ]
+                            # write the data
+                            writer.writerow(data)
             driver_for_acm.quit()
             print("Done! Driver for ACM has quit.")
         else:
@@ -452,6 +451,8 @@ def get_all_articles() -> bool:
                 added_titles = []
                 k = 0  # counts how many results match selected journals/conferences
                 print('max_pages_springer: ', max_pages_springer)
+                if max_pages_springer > 50:
+                    max_pages_springer = 50
 
                 # List of JC belongs to Springer
                 #list_of_selected_jc_springer = create_list_of_selected_jc("Springer")
@@ -459,12 +460,11 @@ def get_all_articles() -> bool:
                 for i in range(int(max_pages_springer)):  # traverse each page
                     t = i + 1
                     print(f"Checking results on page {t}...")
-                    #url_springer = f"https://link.springer.com/search/page/{str(t)}?facet-end-year=2023&date-facet-mode=between&facet-start-year=2018&query={quote(query)}&showAll=true"
-                    url_springer = f"https://link.springer.com/search?new-search=true&query={quote(query)}&content-type=Article&&content-type=ConferencePaper&language=En&date=custom&dateFrom=2018&dateTo=2023&sortBy=relevance&page={str(t)}"
+                    url_springer = f"https://link.springer.com/search?new-search=true&query={quote(query)}&content-type=Article&&content-type=ConferencePaper&language=En&date=custom&dateFrom={start_year}&dateTo={end_year}&sortBy=relevance&page={str(t)}"
 
                     driver_for_springer.get(url_springer)
                     # Implicit wait for 30 seconds
-                    sleep(3)
+                    sleep(5)
                     driver_for_springer.implicitly_wait(100)
                     # parse source code
                     soup = BeautifulSoup(driver_for_springer.page_source, "html.parser")
@@ -483,82 +483,84 @@ def get_all_articles() -> bool:
                             journal = "Not found"
 
                         #matched_journal = [matched_with for matched_with in list_of_selected_jc_springer if (ratio(journal, matched_with) >= similarity_percentage)]
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
 
-                        if len(matched_journal) > 0:
-                            # Result title
-                            p_title = container.find("h3", class_="c-card-open__heading")
-                            if p_title is not None:
-                                title = (
-                                    p_title
-                                    .find("a")
-                                    .find("span")
-                                ).text.strip()
-                                if (
-                                    added_titles.count(title) == 0
-                                ):  # only add to result CSV if title hasn't been added already
-                                    added_titles.append(title)
-                                    k += 1
-                                    result_count += 1
-                                    print(
-                                        f"Placed {k} results from Springer and {result_count} in total so far! Still checking..."
+                        #if len(matched_journal) > 0:
+                        # Result title
+                        p_title = container.find("h3", class_="c-card-open__heading")
+                        if p_title is not None:
+                            title = (
+                                p_title
+                                .find("a")
+                                .find("span")
+                            ).text.strip()
+                            if (
+                                added_titles.count(title) == 0
+                            ):  # only add to result CSV if title hasn't been added already
+                                added_titles.append(title)
+                                k += 1
+                                result_count += 1
+                                print(
+                                    f"Placed {k} results from Springer and {result_count} in total so far! Still checking..."
+                                )
+                                # Result url
+                                temp_url = container.find("h3", class_="c-card-open__heading").a["href"]
+                                #container.find("h2").a["href"]
+                                lst = ["https://link.springer.com", temp_url]
+                                url = "".join(lst)
+                                # Result author(s)
+                                p_authors = container.find("div", class_="c-author-list c-author-list--truncated c-author-list--compact")
+                                if p_authors is not None:
+                                    author_list = (
+                                        p_authors
+                                        .find("span")
+                                    ).text.strip()
+                                    #author_list = author_list.replace("\n", "").strip()
+
+                                    # Result publish year
+                                    p_year = (
+                                        container.find("div", class_="c-meta")
+                                        .find_all("span")[-1].text.strip()
                                     )
-                                    # Result url
-                                    temp_url = container.find("h3", class_="c-card-open__heading").a["href"]
-                                    #container.find("h2").a["href"]
-                                    lst = ["https://link.springer.com", temp_url]
-                                    url = "".join(lst)
-                                    # Result author(s)
-                                    p_authors = container.find("div", class_="c-author-list c-author-list--truncated c-author-list--compact")
-                                    if p_authors is not None:
-                                        author_list = (
-                                            p_authors
-                                            .find("span")
-                                        ).text.strip()
-                                        #author_list = author_list.replace("\n", "").strip()
+                                    p_year = p_year[-4:]
+                                    p_year = int(p_year)
 
-                                        # Result publish year
-                                        p_year = (
-                                            container.find("div", class_="c-meta")
-                                            .find_all("span")[-1].text.strip()
-                                        )
-                                        p_year = p_year[-4:]
-                                        p_year = int(p_year)
+                                    # Citations
+                                    cite = None
 
-                                        # Citations
-                                        cite = None
+                                    # Open Access
+                                    open_access = None
+                                    p_open_access = (
+                                        container.find("span", class_="c-meta__item u-color-open-access")
+                                    )
+                                    if p_open_access is not None:
+                                        open_access = 1
+                                    else:
+                                        open_access = 0
 
-                                        # Open Access
-                                        open_access = None
-                                        p_open_access = (
-                                            container.find("span", class_="c-meta__item u-color-open-access")
-                                        )
-                                        if p_open_access is not None:
-                                            open_access = 1
-                                        else:
-                                            open_access = 0
-
-                                        # Result num
-                                        j += 1
-                                        # Similarity %
-                                        t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
-                                        matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
-                                        sim_per = format(t_sim_per, ".2f")
-                                        data = [
-                                            url,
-                                            title,
-                                            author_list,
-                                            p_year,
-                                            journal,
-                                            matched_with,
-                                            sim_per,
-                                            "Springer",
-                                            query,
-                                            cite,
-                                            open_access
-                                        ]
-                                        # write the data
-                                        writer.writerow(data)
+                                    # Result num
+                                    j += 1
+                                    # Similarity %
+                                    #t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
+                                    #matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
+                                    #sim_per = format(t_sim_per, ".2f")
+                                    data = [
+                                        url,
+                                        title,
+                                        author_list,
+                                        p_year,
+                                        journal,
+                                        #matched_with,
+                                        #sim_per,
+                                        "Springer",
+                                        cite,
+                                        open_access,
+                                        query,
+                                        start_year,
+                                        end_year
+                                    ]
+                                    # write the data
+                                    writer.writerow(data)
             driver_for_springer.quit()
             print("Done! Driver for Springer has quit.")
         else:
@@ -588,13 +590,12 @@ def get_all_articles() -> bool:
                 for i in range(1, int(max_pages_ieee) + 1):
                     t = i
                     print(f"Checking results on page {t}...")
-                    #url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&newsearch=true&matchBoolean=true&queryText=(%22Author%20Keywords%22:{quote(query)})&ranges=2018_2023_Year&pageNumber={str(i)}&rowsPerPage={hits_to_show_ieee}"
-                    url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&matchBoolean=true&queryText=(%22Document%20Title%22:{quote(query)})%20OR%20(%22Abstract%22:{quote(query)})%20OR%20(%22Author%20Keywords%22:{quote(query)})&highlight=true&matchPubs=true&returnType=SEARCH&refinements=ContentType:Conferences&refinements=ContentType:Journals&refinements=ContentType:Early%20Access%20Articles&ranges=2018_2023_Year&returnFacets=ALL&pageNumber={str(i)}&rowsPerPage={hits_to_show_ieee}"
+                    url_ieee = f"https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&matchBoolean=true&queryText=(%22Document%20Title%22:{quote(query)})%20OR%20(%22Abstract%22:{quote(query)})%20OR%20(%22Author%20Keywords%22:{quote(query)})&highlight=true&matchPubs=true&returnType=SEARCH&ranges={start_year}_{end_year}_Year&returnFacets=ALL&refinements=ContentType:Conferences&refinements=ContentType:Journals&refinements=ContentType:Early%20Access%20Articles&pageNumber={str(i)}&rowsPerPage={hits_to_show_ieee}"
 
                     driver_for_ieee.get(url_ieee)
 
                     # Implicit wait for 30 seconds
-                    sleep(5)
+                    sleep(7)
                     driver_for_ieee.implicitly_wait(300)
                     #results_per_page = driver_for_ieee.find_elements_by_class_name(
                     #    "List-results-items"
@@ -611,74 +612,76 @@ def get_all_articles() -> bool:
 
                         #for matched_with in list_of_selected_jc_ieee:
                         #matched_journal = [matched_with for matched_with in list_of_selected_jc_ieee if (ratio(journal, matched_with) >= similarity_percentage)]
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
 
-                        if len(matched_journal) > 0:
-                            # Result title
-                            title = container.find("h3").text.lstrip()
-                            if (
-                                added_titles.count(title) == 0
-                            ):  # only add to result CSV if title hasn't been added already
-                                added_titles.append(title)
-                                k += 1
-                                result_count += 1
-                                print(
-                                    f"Placed {k} results from IEEE and {result_count} in total so far! Still checking..."
-                                )
-                                # Result url
-                                tmp_url = container.find("h3").a["href"]
-                                lst = ["https://ieeexplore.ieee.org", tmp_url]
-                                url = "".join(lst)
-                                # Result author_list
-                                author_list = container.find(
-                                    "p", class_="author"
-                                ).text
-                                # Result publish year
-                                p_year_tmp = container.find(
-                                    "div", class_="publisher-info-container"
-                                ).text
-                                p_year = re.sub(r"\D", "", p_year_tmp)[0:4]
+                        #if len(matched_journal) > 0:
+                        # Result title
+                        title = container.find("h3").text.lstrip()
+                        if (
+                            added_titles.count(title) == 0
+                        ):  # only add to result CSV if title hasn't been added already
+                            added_titles.append(title)
+                            k += 1
+                            result_count += 1
+                            print(
+                                f"Placed {k} results from IEEE and {result_count} in total so far! Still checking..."
+                            )
+                            # Result url
+                            tmp_url = container.find("h3").a["href"]
+                            lst = ["https://ieeexplore.ieee.org", tmp_url]
+                            url = "".join(lst)
+                            # Result author_list
+                            author_list = container.find(
+                                "p", class_="author"
+                            ).text
+                            # Result publish year
+                            p_year_tmp = container.find(
+                                "div", class_="publisher-info-container"
+                            ).text
+                            p_year = re.sub(r"\D", "", p_year_tmp)[0:4]
 
-                                # Citations
-                                p_cite = (
-                                    container.find("div", class_="description")
-                                    .find_all("div")[1]
-                                    .find("span")
-                                )
-                                if p_cite is not None:
-                                    p_cite = p_cite.a.text.strip()
-                                    cite = int(re.sub(r"\D", "", p_cite))
-                                else:
-                                    cite = None
+                            # Citations
+                            p_cite = (
+                                container.find("div", class_="description")
+                                .find_all("div")[1]
+                                .find("span")
+                            )
+                            if p_cite is not None:
+                                p_cite = p_cite.a.text.strip()
+                                cite = int(re.sub(r"\D", "", p_cite))
+                            else:
+                                cite = None
 
-                                # Open Access
-                                p_open_access = (
-                                    container.find("span", class_="icon-access-open-access icon-size-md u-relative")
-                                )
-                                if p_open_access is not None:
-                                    open_access = 1
-                                else:
-                                    open_access = 0
+                            # Open Access
+                            p_open_access = (
+                                container.find("span", class_="icon-access-open-access icon-size-md u-relative")
+                            )
+                            if p_open_access is not None:
+                                open_access = 1
+                            else:
+                                open_access = 0
 
-                                # Similarity %
-                                t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
-                                matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
-                                sim_per = format(t_sim_per, ".2f")
-                                data = [
-                                    url,
-                                    title,
-                                    author_list,
-                                    p_year,
-                                    journal,
-                                    matched_with,
-                                    sim_per,
-                                    "IEEE",
-                                    query,
-                                    cite,
-                                    open_access
-                                ]
-                                # write the data
-                                writer.writerow(data)
+                            # Similarity %
+                            #t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
+                            #matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
+                            #sim_per = format(t_sim_per, ".2f")
+                            data = [
+                                url,
+                                title,
+                                author_list,
+                                p_year,
+                                journal,
+                                #matched_with,
+                                #sim_per,
+                                "IEEE",
+                                cite,
+                                open_access,
+                                query,
+                                start_year,
+                                end_year
+                            ]
+                            # write the data
+                            writer.writerow(data)
             driver_for_ieee.quit()
             print("Done! Driver for IEEE Xplore has quit.")
         else:
@@ -712,12 +715,11 @@ def get_all_articles() -> bool:
                     print(f"Checking results on page {t}...")
 
                     # Read data from URL
-                    #url_sciencedirect = f"https://www.sciencedirect.com/search?date=2018-2023&tak=%s&offset=%s" % (quote(query), var_offset)
-                    url_sciencedirect = f"https://www.sciencedirect.com/search?date=2018-2023&tak={quote(query)}&langs=en&articleTypes=FLA%2CREV&offset={var_offset}"
+                    url_sciencedirect = f"https://www.sciencedirect.com/search?date={start_year}-{end_year}&tak={quote(query)}&langs=en&articleTypes=FLA%2CREV&offset={var_offset}"
 
                     driver_for_sciencedirect.get(url_sciencedirect)
                     # Implicit wait for 30 seconds
-                    sleep(5)
+                    sleep(7)
                     driver_for_sciencedirect.implicitly_wait(100)
 
                     # Initialize code
@@ -743,94 +745,96 @@ def get_all_articles() -> bool:
                         )
                         #print('journal: ', journal)
                         #matched_journal = [matched_with for matched_with in list_of_selected_jc_sciencedirect if (ratio(journal, matched_with) >= similarity_percentage)]
-                        matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
+                        #matched_journal = [matched_with for matched_with in list_of_selected_jc if (ratio(journal, matched_with) >= similarity_percentage)]
 
-                        if len(matched_journal) > 0:
+                        #if len(matched_journal) > 0:
                         #for matched_with in list_of_selected_jc_sciencedirect:
                             #if ratio(journal, matched_with) >= similarity_percentage:
-                            # Result title
-                            title = container.find("h2").text.strip("'")
-                            if (
-                                    added_titles.count(title) == 0
-                            ):  # only add to result CSV if title hasn't been added already
-                                added_titles.append(title)
-                                k += 1
-                                result_count += 1
-                                # Result url
-                                temp_url = container.find("h2").a["href"]
-                                lst = [
-                                    "https://sciencedirect.com",
-                                    temp_url,
-                                ]
-                                url = "".join(lst)
-                                # Result authors
-                                authors = []
-                                ul = container.findAll("span", class_="author")
-                                for li in ul:  # list of authors
-                                    authors.append(
-                                        li.text.rstrip(", \n").strip("'")
-                                    )
-                                t_author_list = str(authors).strip("[]")
-                                author_list = t_author_list.replace("'", "")
-                                # Result date
-                                date = (
-                                    container.select_one(
-                                        "span.srctitle-date-fields > span:last-child"
-                                    )
-                                    .text.strip()
+                        # Result title
+                        title = container.find("h2").text.strip("'")
+                        if (
+                                added_titles.count(title) == 0
+                        ):  # only add to result CSV if title hasn't been added already
+                            added_titles.append(title)
+                            k += 1
+                            result_count += 1
+                            # Result url
+                            temp_url = container.find("h2").a["href"]
+                            lst = [
+                                "https://sciencedirect.com",
+                                temp_url,
+                            ]
+                            url = "".join(lst)
+                            # Result authors
+                            authors = []
+                            ul = container.findAll("span", class_="author")
+                            for li in ul:  # list of authors
+                                authors.append(
+                                    li.text.rstrip(", \n").strip("'")
                                 )
-                                numbers = re.compile(r"\d+(?:\.\d+)?")
-                                p_year = numbers.findall(date)[-1]
-
-                                # Citations
-                                p_cite = (
-                                    container.find("li", class_="CitationCount")
+                            t_author_list = str(authors).strip("[]")
+                            author_list = t_author_list.replace("'", "")
+                            # Result date
+                            date = (
+                                container.select_one(
+                                    "span.srctitle-date-fields > span:last-child"
                                 )
+                                .text.strip()
+                            )
+                            numbers = re.compile(r"\d+(?:\.\d+)?")
+                            p_year = numbers.findall(date)[-1]
 
-                                if p_cite is not None:
-                                    c_cite = (
-                                        p_cite.find("span", class_="preview-link")
-                                        .find("a", class_="anchor anchor-default")
-                                        .find("span", "anchor-text")
-                                    ).text.strip()
+                            # Citations
+                            p_cite = (
+                                container.find("li", class_="CitationCount")
+                            )
 
-                                    cite = int(re.sub(r"\D", "", c_cite))
-                                else:
-                                    cite = None
+                            if p_cite is not None:
+                                c_cite = (
+                                    p_cite.find("span", class_="preview-link")
+                                    .find("a", class_="anchor anchor-default")
+                                    .find("span", "anchor-text")
+                                ).text.strip()
 
-                                # Open Access
-                                p_open_access = (
-                                    container.find("span", class_="access-label")
-                                )
-                                if p_open_access is not None:
-                                    open_access = 1
-                                else:
-                                    open_access = 0
+                                cite = int(re.sub(r"\D", "", c_cite))
+                            else:
+                                cite = None
 
-                                # Result num
-                                j += 1
-                                # Similarity %
-                                t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
-                                matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
-                                sim_per = format(t_sim_per, ".2f")
-                                data = [
-                                    url,
-                                    title,
-                                    author_list,
-                                    p_year,
-                                    journal,
-                                    matched_with,
-                                    sim_per,
-                                    "ScienceDirect",
-                                    query,
-                                    cite,
-                                    open_access
-                                ]
-                                # write the data
-                                writer.writerow(data)
-                                print(
-                                    f"Placed {k} results from sciencedirect and {result_count} in total so far! Still checking..."
-                                )
+                            # Open Access
+                            p_open_access = (
+                                container.find("span", class_="access-label")
+                            )
+                            if p_open_access is not None:
+                                open_access = 1
+                            else:
+                                open_access = 0
+
+                            # Result num
+                            j += 1
+                            # Similarity %
+                            #t_sim_per = max([ratio(journal, matched_jour) * 100 for matched_jour in matched_journal])
+                            #matched_with = [matched_jour for matched_jour in matched_journal if ratio(journal, matched_jour) * 100 >= t_sim_per][0]
+                            #sim_per = format(t_sim_per, ".2f")
+                            data = [
+                                url,
+                                title,
+                                author_list,
+                                p_year,
+                                journal,
+                                #matched_with,
+                                #sim_per,
+                                "ScienceDirect",
+                                cite,
+                                open_access,
+                                query,
+                                start_year,
+                                end_year
+                            ]
+                            # write the data
+                            writer.writerow(data)
+                            print(
+                                f"Placed {k} results from sciencedirect and {result_count} in total so far! Still checking..."
+                            )
             driver_for_sciencedirect.quit()
             print("Done! Driver for sciencedirect has quit.")
         else:
