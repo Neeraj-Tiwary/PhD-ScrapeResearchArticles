@@ -32,11 +32,17 @@ def create_list_of_selected_jc(publisher) -> List:
     return selected_jc
 
 
-def io_query() -> str:
+def io_input(input_type) -> str:
     """
     IO: returns search term
     """
-    return input("Enter your search term here: ")
+    if input_type == "query":
+        return_str = input("Enter your search term here: ")
+    elif input_type == "start_year":
+        return_str = input("Enter your start year for the articles to be retrieved: ")
+    elif input_type == "end_year":
+        return_str = input("Enter your end year for the articles to be retrieved: ")
+    return return_str
 
 
 def io_hits_to_show(database) -> int:
@@ -136,12 +142,14 @@ header = [
     "Author(s)",
     "Year",
     "Journal",
-    "Matched with Selected Journal/Conference",
-    "Similarity %",
+    #"Matched with Selected Journal/Conference",
+    #"Similarity %",
     "Database",
-    "Query",
     "Citations_Counts",
-    "Open_Access"
+    "Open_Access",
+    "Query",
+    "Start_Year",
+    "End_Year"
 ]
 
 # create list of selected journals and conferences using below function
